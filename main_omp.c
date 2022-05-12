@@ -4,7 +4,7 @@
 #include <omp.h>
 #include "md5.h"
 
-#define KEY_NUMBER 10
+#define KEY_NUMBER 3
 #define HASH_NUMBER 9
 #define M 40000000
 
@@ -173,14 +173,12 @@ void main()
             threadPrint(tid, listResultat[i][index]);     }
         }
       }
-      for (i = 0; i < 5; i++){
         analyseSystem(sys1,listResultat,listPassword);
         analyseSystem(sys2,listResultat,listPassword);
         analyseSystem(sys3,listResultat,listPassword);
         analyseSystem(sys4,listResultat,listPassword);
         analyseSystem(sys5,listResultat,listPassword);
 
-      }
     }
 
 
