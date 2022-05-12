@@ -91,7 +91,7 @@ void displayFileContent(FileContent* fileContent){
 }
 
 
-int analyseSystem(FileContent* fileContent,unsigned char*** keyHashs,char** keys){
+int analyseSystem(FileContent* fileContent,unsigned char*keyHashs[KEY_NUMBER][HASH_NUMBER],char** keys){
   for(int i = 0;i <KEY_NUMBER;i++){
     for(int j = 0;j<HASH_NUMBER;j++){
       if(findCorrespondance(fileContent,keyHashs[i][j])){
@@ -120,7 +120,8 @@ void main()
       strcpy(listPassword[i++],fl->content);
       fl = fl->nextLine;
     }
-    unsigned char** listResultat[KEY_NUMBER];
+    unsigned char* listResultat[KEY_NUMBER][HASH_NUMBER];
+
 
 
 
@@ -131,7 +132,6 @@ void main()
         unsigned char* password = malloc(sizeof(unsigned char)*strlen(listPassword[i]));
         strcpy(password, listPassword[i]);
         printf("mdp : %s \n", password);
-        unsigned char* hashs[HASH_NUMBER];
         for (int ind = 1;ind <=HASH_NUMBER*m;ind++){
           if(ind == 1){
             calcul_md5(listPassword[i],strlen(listPassword[i]),mon_hash);
@@ -141,31 +141,30 @@ void main()
           }
           if((ind) % m == 0 ){
             int index = ind/m - 1;
-            hashs[index] = malloc(sizeof(unsigned char)*MD5_HASHBYTES*2);
+            listResultat[i][index] = malloc(sizeof(unsigned char)*MD5_HASHBYTES*2);
             //printf("%d\n", index);
             unsigned char* temp= malloc(sizeof(char)*2) ;
             for(int j=0; j < MD5_HASHBYTES;j++){
                 //printf("%.2x", mon_hash[j]); // Affichage sur deux caracteres
                 sprintf(temp,"%.2x",mon_hash[j]);
-                hashs[index][j*2] = temp[0];
-                hashs[index][j*2 +1] = temp[1];
+                listResultat[i][index][j*2] = temp[0];
+                listResultat[i][index][j*2 +1] = temp[1];
             }
             //printf("\n" );
             //printf("%s\n", hashs[index]);
-            if(findCorrespondance(sys1,hashs[index])>0)
-              printf("Correspondance dans sys1 en i = %d pour %s\n et %s\n",index+1,password,hashs[index]);
+            if(findCorrespondance(sys1,listResultat[i][index])>0)
+              printf("Correspondance dans sys1 en i = %d pour %s\n et %s\n",index+1,password,listResultat[i][index]);
 
-            if(findCorrespondance(sys2,hashs[index])>0)
-              printf("Correspondance dans sys2 en i = %d pour %s\n et %s\n",index+1,password,hashs[index]);
+            if(findCorrespondance(sys2,listResultat[i][index])>0)
+              printf("Correspondance dans sys2 en i = %d pour %s\n et %s\n",index+1,password,listResultat[i][index]);
 
-            if(findCorrespondance(sys3,hashs[index])>0)
-              printf("Correspondance dans sys3 en i = %d pour %s\n et %s\n",index+1,password,hashs[index]);
-            if(findCorrespondance(sys4,hashs[index])>0)
-              printf("Correspondance dans sys4 en i = %d pour %s\n et %s\n",index+1,password,hashs[index]);
-            if(findCorrespondance(sys5,hashs[index])>0)
-              printf("Correspondance dans sys5 en i = %d pour %s\n et %s\n",index+1,password,hashs[index]);
+            if(findCorrespondance(sys3,listResultat[i][index])>0)
+              printf("Correspondance dans sys3 en i = %d pour %s\n et %s\n",index+1,password,listResultat[i][index]);
+            if(findCorrespondance(sys4,listResultat[i][index])>0)
+              printf("Correspondance dans sys4 en i = %d pour %s\n et %s\n",index+1,password,listResultat[i][index]);
+            if(findCorrespondance(sys5,listResultat[i][index])>0)
+              printf("Correspondance dans sys5 en i = %d pour %s\n et %s\n",index+1,password,listResultat[i][index]);
           }
-          listResultat[i] = &hashs;
         }
     }
     analyseSystem(sys1,listResultat,listPassword);
