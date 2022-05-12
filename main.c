@@ -46,7 +46,7 @@ FileContent* readFile(char* name){
   file = fopen(name,"r");
   if(file == NULL){
     printf("Can't open file : %s\n", name);
-    return NULL;
+    exit(2);
   }
   printf("Lecture de %s\n", name);
 
@@ -107,12 +107,12 @@ int analyseSystem(FileContent* fileContent,unsigned char*** keyHashs,char** keys
 void main()
 {
     int i=0;
-    FileContent* passwordFile = readFile("high_frequency_passwords_list.txt");
-    FileContent* sys1 = readFile("systeme_1.phl");
-    FileContent* sys2 = readFile("systeme_2.phl");
-    FileContent* sys3 = readFile("systeme_3.phl");
-    FileContent* sys4 = readFile("systeme_4.phl");
-    FileContent* sys5 = readFile("systeme_5.phl");
+    FileContent* passwordFile = readFile("res/high_frequency_passwords_list.txt");
+    FileContent* sys1 = readFile("res/systeme_1.phl");
+    FileContent* sys2 = readFile("res/systeme_2.phl");
+    FileContent* sys3 = readFile("res/systeme_3.phl");
+    FileContent* sys4 = readFile("res/systeme_4.phl");
+    FileContent* sys5 = readFile("res/systeme_5.phl");
     char* listPassword[passwordFile->length];
     FileLine* fl = passwordFile->firstLine;
     while(fl!=NULL){
@@ -125,7 +125,6 @@ void main()
 
 
     int m = 40000000;
-
     unsigned char* mon_hash = malloc(sizeof(unsigned char)*MD5_HASHBYTES); /* le MD5 renvoie 16 octets */
     for (i = 0; i < KEY_NUMBER; i++)
     {
