@@ -3,7 +3,7 @@
 #include <string.h>
 #include "md5.h"
 
-#define KEY_NUMBER 2
+#define KEY_NUMBER 3
 #define HASH_NUMBER 9
 
 typedef struct FileLine FileLine;

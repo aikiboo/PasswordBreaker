@@ -142,7 +142,9 @@ int main() {
 
     {
         tid = omp_get_thread_num();
-
+        if(tid == 0){
+            printf("Nombre de threads actives : %d\n",omp_get_num_threads());
+        }
 
         unsigned char *mon_hash = malloc(sizeof(unsigned char) * MD5_HASHBYTES); /* le MD5 renvoie 16 octets */
 
@@ -167,7 +169,7 @@ int main() {
                         listResultat[i][index][j * 2 + 1] = temp[1];
                     }
                     //printf("\n" );
-                    threadPrint(tid, listResultat[i][index]);
+                    //threadPrint(tid, listResultat[i][index]);
                 }
             }
         }
@@ -184,13 +186,20 @@ int main() {
         fl = fl->nextLine;
     }
 
+
+    int maxI = 0;
+    for(i = 0;i<SYSTEM_NUMBER;i++){
+        if(timedHashed[i]>maxI){
+            maxI = timedHashed[i];
+        }
+    }
 #pragma omp parallel shared(chunk) private(i, tid)
     {
         tid = omp_get_thread_num();
         unsigned char *mon_hash = malloc(sizeof(unsigned char) * MD5_HASHBYTES); /* le MD5 renvoie 16 octets */
 #pragma omp for schedule(static, chunk)
         for (i = KEY_NUMBER; i < passwordFile->length; i++) {
-            for (int ind = 1; ind <= HASH_NUMBER * m; ind++) {
+            for (int ind = 1; ind <= maxI * m; ind++) {
                 if (ind == 1) {
                     calcul_md5(listPassword[i], strlen(listPassword[i]), mon_hash);
                 } else {
