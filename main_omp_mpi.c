@@ -8,7 +8,7 @@
 #define KEY_NUMBER 3
 #define HASH_NUMBER 9
 #define SYSTEM_NUMBER 5
-#define M 40//000000
+#define M 40000000
 #define PASS_NUMBER 10
 
 typedef struct FileLine FileLine;
@@ -95,7 +95,7 @@ void displayFileContent(FileContent *fileContent) {
 }
 
 
-int analyseSystem(int sysNum, unsigned char *keyHashs[KEY_NUMBER][HASH_NUMBER], char **keys) {
+int analyseSystem(int sysNum, unsigned char *keyHashs[KEY_NUMBER][HASH_NUMBER], char keys[KEY_NUMBER][20]) {
     char file_name[128];
     char* c[2];
     memset(file_name, 0, sizeof(file_name));
@@ -142,19 +142,16 @@ int main() {
     MPI_Init(NULL, NULL);
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    for (int x = 0; x < SYSTEM_NUMBER; x++) {
+        memset(file_name, 0, sizeof(file_name));
+        sprintf(c, "%d", x + 1);
+        strncat(file_name, "res/systeme_", (sizeof(file_name) - strlen(file_name) - 1));
+        strncat(file_name, c, (sizeof(file_name) - strlen(file_name) - 1));
+        strncat(file_name, ".phl", (sizeof(file_name) - strlen(file_name) - 1));
+        systems[x] = readFile(file_name);
+    }
     if(world_rank == 0){
         passwordFile = readFile("res/high_frequency_passwords_list.txt");
-
-        for (int x = 0; x < SYSTEM_NUMBER; x++) {
-            memset(file_name, 0, sizeof(file_name));
-            sprintf(c, "%d", x + 1);
-            strncat(file_name, "res/systeme_", (sizeof(file_name) - strlen(file_name) - 1));
-            strncat(file_name, c, (sizeof(file_name) - strlen(file_name) - 1));
-            strncat(file_name, ".phl", (sizeof(file_name) - strlen(file_name) - 1));
-            systems[x] = readFile(file_name);
-        }
-
-
         fl= passwordFile->firstLine;
         while (fl != NULL) {
             listPassword[i] = malloc(sizeof(char) * strlen(fl->content));
@@ -170,7 +167,7 @@ int main() {
             }
             int x= 0;
             if(j<KEY_NUMBER)
-            MPI_Send(&x,1,MPI_CHAR,1,1,MPI_COMM_WORLD);
+                MPI_Send(&x,1,MPI_CHAR,1,1,MPI_COMM_WORLD);
             else
                 MPI_Send(&x,1,MPI_CHAR,2,1,MPI_COMM_WORLD);
         }
@@ -187,8 +184,8 @@ int main() {
             int j = 0;
             while (1){
                 MPI_Recv(&tmp,1,MPI_CHAR,0,1,MPI_COMM_WORLD,&status);
-                if(tmp == 0)break;
                 keys[i][j++] = tmp;
+                if(tmp == 0)break;
             }
         }
     #pragma omp parallel shared(chunk) private(i, tid)
@@ -234,30 +231,28 @@ int main() {
             }
         for(int i = 0;i<SYSTEM_NUMBER;i++)
             MPI_Send(&timedHashed[i],1,MPI_INT,0,2,MPI_COMM_WORLD);
-
-        MPI_Finalize();
-        return 0;
     }
 
     if(world_rank == 2){
-        for(int i = 0;i<PASS_NUMBER;i++){
+        for(int i = 0;i<PASS_NUMBER-KEY_NUMBER;i++){
             int j = 0;
             while (1){
                 MPI_Recv(&tmp,1,MPI_CHAR,0,1,MPI_COMM_WORLD,&status);
-                if(tmp == 0)break;
                 pass[i][j++] = tmp;
+                if(tmp == 0)break;
             }
         }
-
         for(int i = 0;i<SYSTEM_NUMBER;i++){
             MPI_Recv(&timedHashed[i],1,MPI_INT,0,2,MPI_COMM_WORLD,&status);}
 #pragma omp parallel shared(chunk) private(i, tid)
     {
         tid = omp_get_thread_num();
-        unsigned char *mon_hash = malloc(sizeof(unsigned char) * MD5_HASHBYTES); /* le MD5 renvoie 16 octets */
+        unsigned char mon_hash[MD5_HASHBYTES]; /* le MD5 renvoie 16 octets */
 #pragma omp for schedule(static, chunk)
         for (i = 0; i < PASS_NUMBER-KEY_NUMBER; i++) {
-            for (int ind = 1; ind <= maxI * m; ind++) {
+            printf("pass: %s\n",pass[i]);
+            for (int ind = 1; ind <= HASH_NUMBER * m; ind++) {
+
                 if (ind == 1) {
                     calcul_md5(pass[i], strlen(pass[i]), mon_hash);
                 } else {
@@ -267,16 +262,18 @@ int main() {
                     int index = ind / m;
                     for (int k = 0; k < SYSTEM_NUMBER; k++) {
                         if (timedHashed[k] == index ) {
-                            char *temp = malloc(sizeof(char) * 2);
-                            char *tmp = malloc(sizeof(unsigned char) * MD5_HASHBYTES * 2);
+                            char temp[2];
+                            char tmp[MD5_HASHBYTES * 2+1];
                             for (int j = 0; j < MD5_HASHBYTES; j++) {
                                 //printf("%.2x", mon_hash[j]); // Affichage sur deux caracteres
                                 sprintf(temp, "%.2x", mon_hash[j]);
                                 tmp[j * 2] = temp[0];
                                 tmp[j * 2 + 1] = temp[1];
                             }
+                            tmp[MD5_HASHBYTES*2] = 0;
+                            //printf("%d, i=%d %s\n",k+1,index,tmp);
                             if (findCorrespondance(systems[k], tmp)) {
-                                printf("Password admin trouvé pour le systeme %d: %s\n",k+1,listPassword[i]);
+                                printf("Password admin trouvé pour le systeme %d: %s\n",k+1,pass[i]);
                             }
                         }
                     }
@@ -286,8 +283,10 @@ int main() {
     }
 
     }
+    printf("Fin machine 2 %d\n",world_rank);
     MPI_Barrier(MPI_COMM_WORLD);
-
+    MPI_Finalize();
+    return 0;
 
 
 
